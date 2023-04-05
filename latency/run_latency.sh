@@ -1,0 +1,2 @@
+export LD_LIBRARY_PATH=/service/software/cudnn/cudnn-10.0-linux-x64-v7.4.2.24/cuda/lib64:/tmp2/linchiayi/STDC-Seg/TensorRT-5.1.5.0/lib:/service/software/cuda/cuda-10.0/lib64
+python3 run_latency_stages.py

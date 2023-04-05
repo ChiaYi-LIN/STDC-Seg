@@ -16,8 +16,8 @@ try:
 except:
     from utils.darts_utils import compute_latency_ms_pytorch as compute_latency
     print("use PyTorch for latency test")
-from utils.darts_utils import compute_latency_ms_pytorch as compute_latency
-print("use PyTorch for latency test")
+# from utils.darts_utils import compute_latency_ms_pytorch as compute_latency
+# print("use PyTorch for latency test")
 
 from models.model_stages_trt import BiSeNet
 
@@ -42,11 +42,11 @@ def main():
     n_classes = 19
     
     # STDC1Seg-50 250.4FPS on NVIDIA GTX 1080Ti
-    # backbone = 'STDCNet813'
-    # methodName = 'STDC1-Seg'
-    # inputSize = 512
-    # inputScale = 50
-    # inputDimension = (1, 3, 512, 1024)
+    backbone = 'STDCNet813'
+    methodName = 'STDC1-Seg'
+    inputSize = 512
+    inputScale = 50
+    inputDimension = (1, 3, 512, 1024)
 
     # # STDC1Seg-75 126.7FPS on NVIDIA GTX 1080Ti
     # backbone = 'STDCNet813'
@@ -56,11 +56,11 @@ def main():
     # inputDimension = (1, 3, 768, 1536)
 
     # # STDC2Seg-50 188.6FPS on NVIDIA GTX 1080Ti
-    backbone = 'STDCNet1446'
-    methodName = 'STDC2-Seg'
-    inputSize = 512
-    inputScale = 50
-    inputDimension = (1, 3, 512, 1024)
+    # backbone = 'STDCNet1446'
+    # methodName = 'STDC2-Seg'
+    # inputSize = 512
+    # inputScale = 50
+    # inputDimension = (1, 3, 512, 1024)
 
     # # STDC2Seg-75 97.0FPS on NVIDIA GTX 1080Ti
     # backbone = 'STDCNet1446'

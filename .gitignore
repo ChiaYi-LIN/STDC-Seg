@@ -1,0 +1,8 @@
+TensorRT*
+checkpoints/
+data/
+evaluation_logs/
+*.pyc
+*.onnx
+*.gz
+*.whl

@@ -6,3 +6,4 @@ evaluation_logs/
 *.onnx
 *.gz
 *.whl
+__pycache__/

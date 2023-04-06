@@ -119,8 +119,7 @@ class CLIPTextContextEncoder(nn.Module):
                  **kwargs):
         super().__init__()
         assert encoder_type in self.arch_settings
-        if pretrained is not None:
-            self.pretrained = pretrained
+        self.pretrained = pretrained
 
         self.context_length = context_length
         self.vocab_size = self.arch_settings[encoder_type]['vocab_size']

@@ -7,4 +7,6 @@ evaluation_logs/
 *.engine
 *.gz
 *.whl
+*.pt
+*.pth
 __pycache__/

@@ -7,7 +7,7 @@ Pillow==6.2.0
 protobuf==3.8.0
 scipy==1.1.0
 thop==0.0.31.post2001170342
-torch==1.1.0
-torchvision==0.3.0
+torch==1.7.1
+torchvision==0.8.2
 tqdm==4.25.0
 

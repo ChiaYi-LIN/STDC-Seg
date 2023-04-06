@@ -4,6 +4,7 @@ data/
 evaluation_logs/
 *.pyc
 *.onnx
+*.engine
 *.gz
 *.whl
 __pycache__/

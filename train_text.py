@@ -390,7 +390,7 @@ def train():
             
             state = net.module.state_dict() if hasattr(net, 'module') else net.state_dict()
             if dist.get_rank()==0: 
-                torch.save(state, save_pth)
+                torch.save(state, save_pth, _use_new_zipfile_serialization=False)
 
             logger.info('training iteration {}, model saved to: {}'.format(it+1, save_pth))
 

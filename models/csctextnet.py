@@ -13,7 +13,7 @@ from nets.stdcnet import STDCNet1446, STDCNet813
 # from modules.bn import InPlaceABNSync as BatchNorm2d
 BatchNorm2d = nn.SyncBatchNorm
 # BatchNorm2d = nn.BatchNorm2d
-from models.model_stages import ConvBNReLU, AttentionRefinementModule, BiSeNet
+from models.model_stages import ConvBNReLU, AttentionRefinementModule, FeatureFusionModule, BiSeNetOutput, BiSeNet
 
 
 class LayerNorm(nn.LayerNorm):
@@ -312,15 +312,18 @@ class TextContextPath(nn.Module):
                 if not ly.bias is None: nn.init.constant_(ly.bias, 0)
 
     def get_params(self):
-        wd_params, nowd_params = [], []
+        wd_params, nowd_params, fix_params = [], [], []
         for name, module in self.named_modules():
-            if isinstance(module, (nn.Linear, nn.Conv2d)):
-                wd_params.append(module.weight)
-                if not module.bias is None:
-                    nowd_params.append(module.bias)
-            elif isinstance(module, BatchNorm2d):
-                nowd_params += list(module.parameters())
-        return wd_params, nowd_params
+            if 'text_encoder' in name:
+                fix_params += list(module.parameters())
+            else:
+                if isinstance(module, (nn.Linear, nn.Conv2d)):
+                    wd_params.append(module.weight)
+                    if not module.bias is None:
+                        nowd_params.append(module.bias)
+                elif isinstance(module, BatchNorm2d):
+                    nowd_params += list(module.parameters())
+        return wd_params, nowd_params, fix_params
 
 
 class CSCTextNet(BiSeNet):
@@ -364,12 +367,39 @@ class CSCTextNet(BiSeNet):
         if (not self.use_boundary_2) and (not self.use_boundary_4) and (not self.use_boundary_8):
             return feat_out, feat_out16, feat_out32, feat_outscoremap
 
+    def get_params(self):
+        wd_params, nowd_params, lr_mul_wd_params, lr_mul_nowd_params, fix_params = [], [], [], [], []
+        for name, child in self.named_children():
+            child_params = child.get_params()
+            if len(child_params) == 2:
+                child_wd_params, child_nowd_params = child_params
+            elif len(child_params) == 3:
+                child_wd_params, child_nowd_params, child_fix_params = child_params
+                fix_params += child_fix_params
+            else:
+                raise
+
+            if isinstance(child, (FeatureFusionModule, BiSeNetOutput)):
+                lr_mul_wd_params += child_wd_params
+                lr_mul_nowd_params += child_nowd_params
+            else:
+                wd_params += child_wd_params
+                nowd_params += child_nowd_params
+        return wd_params, nowd_params, lr_mul_wd_params, lr_mul_nowd_params, fix_params
+
 
 if __name__ == "__main__":
-    text_encoder = CLIPTextContextEncoder(ontext_length=22, encoder_type='RN50', pretrained='./checkpoints/CLIP/RN50.pt')
-    text_encoder.cuda()
-    text_encoder.eval()
-    text = torch.randint(0, 255, (19, 5)).cuda()
-    context = torch.randn(19, 17, 512).cuda()
-    out = text_encoder(text, context)
+    # text_encoder = CLIPTextContextEncoder(ontext_length=22, encoder_type='RN50', pretrained='./checkpoints/CLIP/RN50.pt')
+    # text_encoder.cuda()
+    # text_encoder.eval()
+    # text = torch.randint(0, 255, (19, 5)).cuda()
+    # context = torch.randn(19, 17, 512).cuda()
+    # out = text_encoder(text, context)
+    # print(out.shape)
+
+    net = CSCTextNet('STDCNet813', 19)
+    net.cuda()
+    net.eval()
+    in_ten = torch.randn(1, 3, 768, 1536).cuda()
+    out, out16, out32, score_map = net(in_ten)
     print(out.shape)

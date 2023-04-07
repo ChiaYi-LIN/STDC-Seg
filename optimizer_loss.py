@@ -25,7 +25,14 @@ class Optimizer(object):
         self.max_iter = float(max_iter)
         self.power = power
         self.it = 0
-        wd_params, nowd_params, lr_mul_wd_params, lr_mul_nowd_params = model.get_params()
+        model_params = model.get_params()
+        if len(model_params) == 4:
+            wd_params, nowd_params, lr_mul_wd_params, lr_mul_nowd_params = model_params
+            fix_params = []
+        elif (len(model_params)) == 5:
+            wd_params, nowd_params, lr_mul_wd_params, lr_mul_nowd_params, fix_params = model_params
+        else:
+            raise
         loss_nowd_params = loss.get_params()
         # print(wd_params)
         # print(nowd_params)
@@ -36,7 +43,8 @@ class Optimizer(object):
                 {'params': nowd_params, 'weight_decay': 0},
                 {'params': lr_mul_wd_params, 'lr_mul': True},
                 {'params': lr_mul_nowd_params, 'weight_decay': 0, 'lr_mul': True},
-                {'params': loss_nowd_params}]
+                {'params': loss_nowd_params},
+                {'params': fix_params, 'lr': 0, 'weight_decay': 0}]
                 # {'params': loss_nowd_params, 'weight_decay': 0, 'lr': 0.000001}]
         self.optim = torch.optim.SGD(
                 param_list,

@@ -225,7 +225,7 @@ class TextContextPath(nn.Module):
         self.num_classes = len(self.CLASSES)
         self.label_context_length = text_encoder_config['label_context_length']
         self.learn_context_length = text_encoder_config['learn_context_length']
-        self.label_texts = torch.cat([tokenize(c, context_length=self.label_context_length) for c in self.CLASSES]).requires_grad_(False)  # n_class, label_context_length
+        self.label_texts = nn.Parameter(torch.cat([tokenize(c, context_length=self.label_context_length) for c in self.CLASSES]), requires_grad=False)  # n_class, label_context_length
         self.token_embed_dim = 512
         self.context_mode = text_encoder_config['context_mode']
         if self.context_mode == 'UC':
@@ -280,11 +280,11 @@ class TextContextPath(nn.Module):
         contexts = self.contexts.to(feat.device)
         if contexts.dim() == 2:
             contexts = contexts.unsqueeze(0).expand(self.num_classes, -1, -1)  # n_class, context_context_length, toekn_embed_dim
-        text_embeddings = self.text_encoder(label_texts, contexts).expand(B, -1, -1).type(feat.dtype).to(feat.device)  # batch_size, full_context_length, embed_dim
+        text_embeddings = self.text_encoder(label_texts, contexts).expand(B, -1, -1)  # batch_size, full_context_length, embed_dim
 
         feat_normalize = F.normalize(feat, dim=1, p=2).view(B, C, H * W)
         text_embeddings_normalize = F.normalize(text_embeddings, dim=2, p=2)
-        score_map = torch.bmm(text_embeddings_normalize, feat_normalize).view(B, text_embeddings_normalize.shape[1], H, W)
+        score_map = torch.bmm(text_embeddings_normalize, feat_normalize).view(B, self.num_classes, H, W)
         feat32 = torch.cat([feat32, score_map], dim=1)
 
         # Context Path
@@ -314,15 +314,22 @@ class TextContextPath(nn.Module):
     def get_params(self):
         wd_params, nowd_params, fix_params = [], [], []
         for name, module in self.named_modules():
-            if 'text_encoder' in name:
-                fix_params += list(module.parameters())
-            else:
+            if 'text_encoder' not in name:
                 if isinstance(module, (nn.Linear, nn.Conv2d)):
                     wd_params.append(module.weight)
                     if not module.bias is None:
                         nowd_params.append(module.bias)
                 elif isinstance(module, BatchNorm2d):
                     nowd_params += list(module.parameters())
+
+        for name, child in self.named_children():
+            if 'text_encoder' in name:
+                fix_params += list(child.parameters())
+
+        for name, param in self.named_parameters():
+            if 'label_texts' in name:
+                fix_params.append(param)
+
         return wd_params, nowd_params, fix_params
 
 
@@ -403,3 +410,7 @@ if __name__ == "__main__":
     in_ten = torch.randn(1, 3, 768, 1536).cuda()
     out, out16, out32, score_map = net(in_ten)
     print(out.shape)
+
+    # for name, child in net.named_modules():
+    #     if name == 'cp':
+    #         child.get_params()

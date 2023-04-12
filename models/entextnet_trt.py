@@ -11,7 +11,7 @@ from clip import tokenize
 
 from nets.stdcnet import STDCNet1446, STDCNet813
 BatchNorm2d = nn.BatchNorm2d
-from models.model_stages_trt import ConvBNReLU, AttentionRefinementModule, BiSeNet
+from models.model_stages_trt import ConvBNReLU, AttentionRefinementModule, FeatureFusionModule, BiSeNetOutput, BiSeNet
 
 
 class LayerNorm(nn.LayerNorm):
@@ -198,17 +198,17 @@ class CLIPTextContextEncoder(nn.Module):
         return x
 
 
-class TextContextPath(nn.Module):
-    def __init__(self, backbone='CatNetSmall', pretrain_model='', use_conv_last=False, input_size=512, *args, **kwargs):
-        super(TextContextPath, self).__init__()
+class EnTextContextPath(nn.Module):
+    def __init__(self, backbone='CatNetSmall', n_classes=19, pretrain_model='', use_conv_last=False, input_size=512, *args, **kwargs):
+        super(EnTextContextPath, self).__init__()
 
         self.backbone_name = backbone
         self.input_size = input_size
         print('backbone: ', backbone)
 
         # Text
-        self.text_embeddings = torch.randn(1, 19, 1024)
-        self.num_classes = 19
+        self.text_embeddings = torch.randn(1, n_classes, 1024)
+        self.num_classes = n_classes
 
         # Context
         if backbone == 'STDCNet1446':
@@ -288,11 +288,11 @@ class TextContextPath(nn.Module):
         feat2, feat4, feat8, feat16, feat32 = self.backbone(x)
 
         # Text Path
-        text_embeddings = self.text_embeddings.cuda()
+        text_embeddings = self.text_embeddings.to(feat32.device)
         feat_normalize = F.normalize(feat32, dim=1, p=2).view(1, 1024, self.HW32)
         score_map = torch.bmm(text_embeddings, feat_normalize).view(1, self.num_classes, self.H32, self.W32)
-        feat32 = torch.cat([feat32, feat32[:, :19, :, :]], dim=1)
-        feat32[:, -19:, :, :] = score_map
+        feat32 = torch.cat([feat32, feat32[:, :self.num_classes, :, :]], dim=1)
+        feat32[:, -self.num_classes :, :, :] = score_map
 
         # Context Path
         size_array = [int(s) for s in feat32.size()[2:]]
@@ -331,10 +331,10 @@ class TextContextPath(nn.Module):
         return wd_params, nowd_params
 
 
-class CSCTextNet(BiSeNet):
+class EnTextNet(BiSeNet):
     def __init__(self, backbone, n_classes, pretrain_model='', use_boundary_2=False, use_boundary_4=False, use_boundary_8=False, use_boundary_16=False, input_size=512, use_conv_last=False, heat_map=False, *args, **kwargs):
-        super(CSCTextNet, self).__init__(backbone, n_classes, pretrain_model, use_boundary_2, use_boundary_4, use_boundary_8, use_boundary_16, input_size, use_conv_last, heat_map, *args, **kwargs)
-        self.cp = TextContextPath(backbone, pretrain_model, use_conv_last=use_conv_last, input_size=input_size)
+        super(EnTextNet, self).__init__(backbone, n_classes, pretrain_model, use_boundary_2, use_boundary_4, use_boundary_8, use_boundary_16, input_size, use_conv_last, heat_map, *args, **kwargs)
+        self.cp = EnTextContextPath(backbone, n_classes, pretrain_model, use_conv_last=use_conv_last, input_size=input_size)
 
     def forward(self, x):
         # H, W = x.size()[2:]

@@ -19,7 +19,8 @@ except:
 # from utils.darts_utils import compute_latency_ms_pytorch as compute_latency
 # print("use PyTorch for latency test")
 
-from models.csctextnet_trt import CSCTextNet
+from models.entextnet_trt import EnTextNet
+from models.detextnet_trt import DeTextNet
 
 def main():
     
@@ -69,16 +70,16 @@ def main():
     # inputScale = 75
     # inputDimension = (1, 3, 768, 1536)
     
-    model = CSCTextNet(backbone=backbone, n_classes=n_classes, 
+    model = EnTextNet(backbone=backbone, n_classes=n_classes, 
     use_boundary_2=use_boundary_2, use_boundary_4=use_boundary_4, 
     use_boundary_8=use_boundary_8, use_boundary_16=use_boundary_16, 
     input_size=inputSize, use_conv_last=use_conv_last)
     
 
-    print('loading parameters...')
-    respth = '../checkpoints/{}/'.format(methodName)
-    save_pth = os.path.join(respth, 'model_maxmIOU{}.pth'.format(inputScale))
-    model.load_state_dict(torch.load(save_pth), strict=False)
+    # print('loading parameters...')
+    # respth = '../checkpoints/{}/'.format(methodName)
+    # save_pth = os.path.join(respth, 'model_maxmIOU{}.pth'.format(inputScale))
+    # model.load_state_dict(torch.load(save_pth), strict=False)
     model = model.cuda()
     #####################################################
 

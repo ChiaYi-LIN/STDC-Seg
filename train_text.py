@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- encoding: utf-8 -*-
 from logger import setup_logger
-from models.csctextnet import CSCTextNet
+from models.entextnet import EnTextNet
 from cityscapes import CityScapes
 from loss.loss import OhemCELoss
 from loss.detail_loss import DetailAggregateLoss
@@ -206,7 +206,7 @@ def train():
 
     ## model
     ignore_idx = 255
-    net = CSCTextNet(backbone=args.backbone, n_classes=n_classes, pretrain_model=args.pretrain_path, 
+    net = EnTextNet(backbone=args.backbone, n_classes=n_classes, pretrain_model=args.pretrain_path, 
     use_boundary_2=use_boundary_2, use_boundary_4=use_boundary_4, use_boundary_8=use_boundary_8, 
     use_boundary_16=use_boundary_16, use_conv_last=args.use_conv_last)
 

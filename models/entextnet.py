@@ -200,9 +200,9 @@ class CLIPTextContextEncoder(nn.Module):
         return x
 
 
-class TextContextPath(nn.Module):
-    def __init__(self, backbone='CatNetSmall', pretrain_model='', use_conv_last=False, *args, **kwargs):
-        super(TextContextPath, self).__init__()
+class EnTextContextPath(nn.Module):
+    def __init__(self, backbone='CatNetSmall', n_classes=19, pretrain_model='', use_conv_last=False, *args, **kwargs):
+        super(EnTextContextPath, self).__init__()
 
         self.backbone_name = backbone
 
@@ -222,7 +222,8 @@ class TextContextPath(nn.Module):
                            'bus', 'train', 'motorcycle', 'bicycle')
         }
         self.CLASSES = CLASSES_DICT[text_encoder_config['dataset_name']]
-        self.num_classes = len(self.CLASSES)
+        assert n_classes == len(self.CLASSES)
+        self.num_classes = n_classes
         self.label_context_length = text_encoder_config['label_context_length']
         self.learn_context_length = text_encoder_config['learn_context_length']
         self.label_texts = nn.Parameter(torch.cat([tokenize(c, context_length=self.label_context_length) for c in self.CLASSES]), requires_grad=False)  # n_class, label_context_length
@@ -333,10 +334,10 @@ class TextContextPath(nn.Module):
         return wd_params, nowd_params, fix_params
 
 
-class CSCTextNet(BiSeNet):
+class EnTextNet(BiSeNet):
     def __init__(self, backbone, n_classes, pretrain_model='', use_boundary_2=False, use_boundary_4=False, use_boundary_8=False, use_boundary_16=False, use_conv_last=False, heat_map=False, *args, **kwargs):
-        super(CSCTextNet, self).__init__(backbone, n_classes, pretrain_model, use_boundary_2, use_boundary_4, use_boundary_8, use_boundary_16, use_conv_last, heat_map, *args, **kwargs)
-        self.cp = TextContextPath(backbone, pretrain_model, use_conv_last=use_conv_last)
+        super(EnTextNet, self).__init__(backbone, n_classes, pretrain_model, use_boundary_2, use_boundary_4, use_boundary_8, use_boundary_16, use_conv_last, heat_map, *args, **kwargs)
+        self.cp = EnTextContextPath(backbone, n_classes, pretrain_model, use_conv_last=use_conv_last)
 
     def forward(self, x):
         H, W = x.size()[2:]

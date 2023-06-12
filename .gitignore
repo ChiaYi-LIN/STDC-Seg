@@ -10,3 +10,4 @@ evaluation_logs/
 *.pt
 *.pth
 __pycache__/
+results/
